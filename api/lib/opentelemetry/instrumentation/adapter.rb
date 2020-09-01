@@ -58,12 +58,11 @@ module OpenTelemetry
     # by environment variable will take precedence over local config. The
     # convention for environment variable name is the library name, upcased with
     # '::' replaced by underscores, and '_ENABLED' appended. For example:
-    # OPENTELEMETRY_ADAPTERS_SINATRA_ENABLED = false.
+    # OTEL_RUBY_INSTRUMENTATION_SINATRA_ENABLED = false.
     class Adapter
       class << self
         NAME_REGEX = /^(?:(?<namespace>[a-zA-Z0-9_:]+):{2})?(?<classname>[a-zA-Z0-9_]+)$/.freeze
         private_constant :NAME_REGEX
-
         private :new # rubocop:disable Style/AccessModifierDeclarations
 
         def inherited(subclass)
@@ -225,16 +224,19 @@ module OpenTelemetry
 
       private
 
+      ENV_NAME_REGEX = /^OPENTELEMETRY_ADAPTERS?_/.freeze
+      ENV_NAME_PREFIX = 'OTEL_RUBY_INSTRUMENTATION_'
+
       # Checks to see if this adapter is enabled by env var. By convention, the
       # environment variable will be the adapter name upper cased, with '::'
       # replaced by underscores and _ENABLED appended. For example, the
       # environment variable name for OpenTelemetry::Adapter::Sinatra will be
-      # OPENTELEMETRY_ADAPTERS_SINATRA_ENABLED. A value of 'false' will disable
+      # OTEL_RUBY_INSTRUMENTATION_SINATRA_ENABLED. A value of 'false' will disable
       # the adapter, all other values will enable it.
       def enabled_by_env_var?
-        var_name = name.dup.tap do |n|
-          n.upcase!
+        var_name = name.upcase.tap do |n|
           n.gsub!('::', '_')
+          n.gsub!(ENV_NAME_REGEX, ENV_NAME_PREFIX)
           n << '_ENABLED'
         end
         ENV[var_name] != 'false'
